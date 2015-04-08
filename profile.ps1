@@ -73,9 +73,6 @@ function Undo-CustomEnvironment
 	}
 }
 
-#$ErrorActionPreference = "Continue"
-#$WarningPreference = "Continue"
-
 <#
 	.SYNOPSIS
 		Reads the local environment file and imports it into the active session's environment.
