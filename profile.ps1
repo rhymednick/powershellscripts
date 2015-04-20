@@ -1,3 +1,75 @@
+
+<#
+	.SYNOPSIS
+		Creates a new PSDrive from a folder location.
+	
+	.DESCRIPTION
+		This function creates a new PSDrive from a folder location. It is a helper function for the New-PSDrive cmdlet.
+	
+	.PARAMETER driveName
+		The name for the drive.
+	
+	.PARAMETER folder
+		The folder to map as a drive.
+	
+	.PARAMETER scope
+		The scope of the mapping. This is passed, unmodified, to the New-PSDrive cmdlet call. 
+	
+	.EXAMPLE
+		PS C:\> New-FolderDrive -driveName 'user' -folder $env:USERPROFILE
+	
+#>
+function New-FolderDrive
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]
+		$driveName,
+		[Parameter(Mandatory = $true)]
+		[string]
+		$folder,
+		[ValidateSet("Global", "Local", "Script")]
+		[string]
+		$scope = "Script"
+	)
+	
+	If (!(Test-Path "$($driveName):"))
+	{
+		If (Test-Path $folder)
+		{
+			New-PSDrive -name $driveName -PSProvider FileSystem -Root $folder -Scope $scope | Out-Null
+			if (Test-Path "$($driveName):")
+			{
+				# Create a helper function to make it easier to navigate to this drive (i.e. do it like it was done in DOS).
+				Invoke-Expression "Function global:$($driveName): { Set-Location $($driveName): }" 
+						
+				Write-Host "The folder $folder was successfully mapped to $($driveName):.`n"
+			}
+			else
+			{
+				Write-Error "The folder $folder was not successfully mapped to $($driveName):.`n"
+			}
+		}
+		else
+		{
+			Write-Warning "Unable to map folder $folder because it doesn't exist in the file system."
+		}
+	}
+	else
+	{
+		Write-Warning "Attempt to map $driveName was aborted because the drive name is in use."
+	}
+}
+
+# Map our folder drives for easy access to common files.
+
+New-FolderDrive "scripts" "C:\git\powershellscripts"
+New-FolderDrive "sources" "c:\sd"
+New-FolderDrive "user" -folder $env:USERPROFILE
+New-FolderDrive "docs" -folder "$env:USERPROFILE\Documents"
+
 <#
 	.SYNOPSIS
 		Returns the environment variables that are part of the location-specific environment tool cache.
@@ -72,6 +144,9 @@ function Undo-CustomEnvironment
 		}
 	}
 }
+
+#$ErrorActionPreference = "Continue"
+#$WarningPreference = "Continue"
 
 <#
 	.SYNOPSIS
